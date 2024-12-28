@@ -4,12 +4,39 @@ import axios from "axios";
 import "../Profile.css";
 import Header from "./Header/Header";
 import FullscreenImage from "./FullscreenImage/FullscreenImage";
-import ProfileForm from "./ProfileForm/ProfileForm";
+import ProfileForm from "./ProfileForm/AcademicCredentialsUG";
+import HscDiplomaForm from "./ProfileForm/AcademicCredentialsHscDiploma";
+import SscForm from "./ProfileForm/AcademicCredentialsSsc";
 
 const Profile = () => {
   const [isImageFullscreen, setIsImageFullscreen] = useState(false);
   const [userData, setUserData] = useState(null); // State to hold user data
   const [isEditable, setIsEditable] = useState(false); // State for edit/view mode
+
+  const [visibilityFlags, setVisibilityFlags] = useState({
+    ugSubmitted: false,
+    hscSubmitted: false,
+    sscSubmitted: false,
+  });
+
+  // Fetch visibility flags
+  const fetchVisibilityFlags = async () => {
+    try {
+      const response = await axios.get(
+        `http://localhost:5000/api/visibility/${userName}`
+      );
+      if (response.data.success) {
+        setVisibilityFlags(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching visibility flags:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchUserData(); // Existing user data fetch
+    fetchVisibilityFlags(); // Fetch visibility flags
+  }, []);
 
   const imageUrl = require("./Assets/team-4-800x800.jpg");
   const location = useLocation();
@@ -34,6 +61,7 @@ const Profile = () => {
 
   useEffect(() => {
     fetchUserData(); // Fetch user data when the component mounts
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleImageClick = () => {
@@ -97,52 +125,7 @@ const Profile = () => {
             </div>
           )}
         </div>
-        {/* 
-        <div className="account-info">
-          <h6>User Information</h6>
-          <div className="user-info-card">
-            <div className="form-group">
-              <label>Username:</label>
-              <p>{userData?.username}</p>
-              <input
-                type="text"
-                value={userData.username}
-                onChange={(e) => (e.target.value)}
-                readOnly // Always read-only
-              />
-            </div>
-            <div className="form-group">
-              <label>Email address:</label>
-              <p>{userData?.email}</p>
-            </div>
-            <div className="form-group">
-              <label>First name:</label>
-              <p>{userData?.firstName}</p>
-            </div>
-            <div className="form-group">
-              <label>Last name:</label>
-              <p>{userData?.lastName}</p>
-            </div>
-            <div className="form-group">
-              <label>Address:</label>
-              <p>{userData?.address}</p>
-            </div>
-            <div className="form-row">
-              <div className="form-group">
-                <label>City:</label>
-                <p>{userData?.city}</p>
-              </div>
-              <div className="form-group">
-                <label>Country:</label>
-                <p>{userData?.country}</p>
-              </div>
-              <div className="form-group">
-                <label>Postal code:</label>
-                <p>{userData?.postalCode}</p>
-              </div>
-            </div>
-          </div>
-        </div> */}
+
         <div className="account-info">
           <h6>Personal Information</h6>
           <form>
@@ -231,7 +214,14 @@ const Profile = () => {
           </form>
         </div>
       </div>
-      <ProfileForm />
+      {/* <ProfileForm />
+      <HscDiplomaForm/>
+      <SscForm/> */}
+
+      {visibilityFlags.ugSubmitted || <ProfileForm />}
+      {visibilityFlags.hscSubmitted || <HscDiplomaForm />}
+      {visibilityFlags.sscSubmitted || <SscForm />}
+
       {isImageFullscreen && (
         <FullscreenImage imageUrl={imageUrl} onClose={handleCloseFullscreen} />
       )}

@@ -217,6 +217,287 @@ app.post('/api/check-duplicate', async (req, res) => {
 
 
 
+// ================================================================================================================================
+
+
+// Academic Credentials Schema
+// UG Schema
+const ugSchema = new mongoose.Schema({
+  username: { type: String }, // Reference to the user
+  srn: { type: String },
+  prn: { type: String },
+  universityurl: { type: String },
+  university: { type: String },
+  course: { type: String },
+  startDate: { type: Date },
+  graduateDate: { type: Date },
+  cgp: { type: String },
+  state: { type: String },
+  district: { type: String },
+  transcriptFile: { type: String }, // File path for uploaded transcripts
+});
+
+// Create UG model
+const UG = mongoose.model('UG', ugSchema);
+
+
+app.post('/api/ug', async (req, res) => {
+  const { username, srn, prn, universityurl, university, course, startDate, graduateDate, cgp, state, district } = req.body;
+  
+  try {
+    // Create a new UG document
+    const newUG = new UG({
+      username,
+      srn,
+      prn,
+      universityurl,
+      university,
+      course,
+      startDate: startDate ? new Date(startDate) : null,
+      graduateDate: graduateDate ? new Date(graduateDate) : null,
+      cgp,
+      state,
+      district,
+      });
+
+    // Save to the database
+    await newUG.save();
+
+    res.status(201).json({ success: true, message: "UG form data saved successfully!" });
+  } catch (error) {
+    console.error('Error saving UG form data:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+
+
+// HSC_Diploma Schema
+const hscDiplomaSchema = new mongoose.Schema({
+  username: { type: String, required: true }, // Reference to the user
+  hcn: { type: String, required: true },
+  collage: { type: String, required: true },
+  course_hsc_diploma: { type: String, required: true },
+  gap: { type: String, required: true },
+  board: { type: String, required: true },
+  startDate: { type: Date },
+  graduateDate: { type: Date },
+  totalMarks: { type: Number },
+  obtainedMarks: { type: Number },
+  percentage: { type: String },
+  state: { type: String },
+  district: { type: String },
+  subDistrict: { type: String },
+  transcriptFile: { type: String }, // File path for uploaded transcripts
+});
+
+// Create HSC_Diploma model
+const HSC_Diploma = mongoose.model('HSC_Diploma', hscDiplomaSchema);
+
+
+// HSC Diploma submission endpoint
+app.post('/api/hsc', async (req, res) => {
+  try {
+    const {
+      username,
+      hcn,
+      collage,
+      course_hsc_diploma,
+      gap,
+      board,
+      startDate,
+      graduateDate,
+      totalMarks,
+      obtainedMarks,
+      percentage,
+      state,
+      district,
+      subDistrict,
+      transcriptFile
+    } = req.body;
+
+    // Create a new HSC Diploma document
+    const newHscDiploma = new HSC_Diploma({
+      username,
+      hcn,
+      collage,
+      course_hsc_diploma,
+      gap,
+      board,
+      startDate,
+      graduateDate,
+      totalMarks,
+      obtainedMarks,
+      percentage,
+      state,
+      district,
+      subDistrict,
+      transcriptFile // Assuming you're handling the file upload separately
+    });
+
+    // Save the document to the database
+    const savedHscDiploma = await newHscDiploma.save();
+    
+    // Send response back
+    res.status(201).json({
+      success: true,
+      message: 'HSC Diploma data saved successfully',
+      data: savedHscDiploma,
+    });
+  } catch (error) {
+    console.error('Error saving HSC Diploma data:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error saving HSC Diploma data',
+      error: error.message,
+    });
+  }
+});
+
+
+
+// SSC Schema
+const sscSchema = new mongoose.Schema({
+  username: { type: String, required: true }, // Reference to the user
+  esn: { type: String, required: true },
+  institution: { type: String, required: true },
+  board: { type: String, required: true },
+  course: { type: String, required: true },
+  yearOfPassing: { type: Date, required: true },
+  totalMarks: { type: Number },
+  obtainedMarks: { type: Number },
+  percentage: { type: String },
+  state: { type: String },
+  district: { type: String },
+  subDistrict: { type: String },
+  transcriptFile: { type: String }, // File path for uploaded transcripts
+});
+
+// Create SSC model
+const SSC = mongoose.model('SSC', sscSchema);
+
+
+
+
+
+// SSC submission endpoint
+app.post('/api/ssc', async (req, res) => {
+  try {
+    const {
+      username,
+      esn,
+      institution,
+      board,
+      course,
+      yearOfPassing,
+      totalMarks,
+      obtainedMarks,
+      percentage,
+      state,
+      district,
+      subDistrict,
+      transcriptFile
+    } = req.body;
+
+    // Create a new SSC document
+    const newSSC = new SSC({
+      username,
+      esn,
+      institution,
+      board,
+      course,
+      yearOfPassing,
+      totalMarks,
+      obtainedMarks,
+      percentage,
+      state,
+      district,
+      subDistrict,
+      transcriptFile // Assuming you're handling the file upload separately
+    });
+
+    // Save the document to the database
+    const savedSSC = await newSSC.save();
+    
+    // Send response back
+    res.status(201).json({
+      success: true,
+      message: 'SSC data saved successfully',
+      data: savedSSC,
+    });
+  } catch (error) {
+    console.error('Error saving SSC data:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error saving SSC data',
+      error: error.message,
+    });
+  }
+});
+
+
+// =======================================================================================================================================================
+
+// Visibility Flags Schema
+const visibilityFlagsSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true },
+  ugSubmitted: { type: Boolean, default: false },
+  hscSubmitted: { type: Boolean, default: false },
+  sscSubmitted: { type: Boolean, default: false },
+});
+
+// Create Visibility Flags model
+const VisibilityFlags = mongoose.model('VisibilityFlags', visibilityFlagsSchema);
+
+module.exports = VisibilityFlags;
+
+// Endpoint to update visibility flags
+app.put('/api/visibility/:username', async (req, res) => {
+  const { username } = req.params;
+  const { ugSubmitted, hscSubmitted, sscSubmitted } = req.body;
+
+  try {
+    const result = await VisibilityFlags.findOneAndUpdate(
+      { username },
+      { ugSubmitted, hscSubmitted, sscSubmitted },
+      { new: true, upsert: true }
+    );
+
+    return res.status(200).json({ success: true, data: result });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+
+// Endpoint to get visibility flags
+app.get('/api/visibility/:username', async (req, res) => {
+  const { username } = req.params;
+
+  try {
+    const flags = await VisibilityFlags.findOne({ username });
+    
+    if (!flags) {
+      // If no flags exist for the user, return a default object
+      return res.status(200).json({
+        success: true,
+        data: {
+          ugSubmitted: false,
+          hscSubmitted: false,
+          sscSubmitted: false,
+        },
+      });
+    }
+
+    return res.status(200).json({ success: true, data: flags });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+});
+
+
+
+
 // Start the server
 const PORT = process.env.PORT || 5000; // Allow port to be set by environment variable
 app.listen(PORT, () => {
