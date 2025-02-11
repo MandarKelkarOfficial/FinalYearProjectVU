@@ -38,7 +38,7 @@ const Profile = () => {
     fetchVisibilityFlags(); // Fetch visibility flags
   }, []);
 
-  const imageUrl = require("./Assets/team-4-800x800.jpg");
+  const imageUrl = require("./Assets/maddy.jpeg");
   const location = useLocation();
   const userName = location.state?.userName || "User"; // Default to 'User' if no name is passed
 

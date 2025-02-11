@@ -17,6 +17,7 @@ const ProfileForm = () => {
   const [district, setDistrict] = useState("");
   const [subDistrict, setSubDistrict] = useState("");
   const [year, setYear] = useState("select"); 
+  // eslint-disable-next-line no-unused-vars
   const [transcriptFile, setTranscriptFile] = useState(null);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -48,18 +49,60 @@ const ProfileForm = () => {
   };
 
   // Handle file change
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
+  // const handleFileChange = (e) => {
+  //   const file = e.target.files[0];
 
-    // Check file size (2MB limit)
+  //   // Check file size (2MB limit)
+  //   if (file && file.size > 2 * 1024 * 1024) {
+  //     setError("File size should not exceed 2MB.");
+  //     setTranscriptFile(null);
+  //   } else {
+  //     setError("");
+  //     setTranscriptFile(file); 
+  //   }
+  // };
+
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+  
     if (file && file.size > 2 * 1024 * 1024) {
       setError("File size should not exceed 2MB.");
       setTranscriptFile(null);
-    } else {
-      setError("");
-      setTranscriptFile(file); 
+      return;
+    }
+  
+    setError("");
+    setTranscriptFile(file);
+  
+    // Upload to backend
+    const formData = new FormData();
+    formData.append("file", file);
+  
+    try {
+      const response = await axios.post("http://localhost:5000/api/upload", formData, {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      });
+  
+      const { success, text } = response.data;
+  
+      if (success) {
+        console.log("OCR Extracted Text:", text);
+        setMessage("OCR successfully extracted text!");
+  
+        // Parse and fill relevant fields
+        // Example: Set some field based on extracted data
+        setUniversity(text.match(/University:\s*(.*)/)?.[1] || university);
+      } else {
+        setError("Error extracting text from transcript.");
+      }
+    } catch (error) {
+      console.error("File upload error:", error);
+      setError("Error uploading the file.");
     }
   };
+  
 
   const location = useLocation();
   const username = location.state?.userName || "User";

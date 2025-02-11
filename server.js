@@ -5,8 +5,25 @@ const cors = require("cors");
 const path = require("path");
 const nodemailer = require("nodemailer");
 const bodyParser = require("body-parser");
-
+// const Tesseract = require("tesseract");
 const app = express();
+const fs = require('fs');
+const multer = require("multer");
+// const path = require("path");
+const Tesseract = require("tesseract.js");
+
+// Configure multer for file uploads
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "uploads/"); // Save files in the 'uploads' directory
+  },
+  filename: (req, file, cb) => {
+    cb(null, `${Date.now()}-${file.originalname}`);
+  },
+});
+
+const upload = multer({ storage });
+
 
 // Middleware
 app.use(cors());
@@ -241,10 +258,60 @@ const ugSchema = new mongoose.Schema({
 const UG = mongoose.model('UG', ugSchema);
 
 
-app.post('/api/ug', async (req, res) => {
-  const { username, srn, prn, universityurl, university, course, startDate, graduateDate, cgp, state, district } = req.body;
+// app.post('/api/ug', async (req, res) => {
+//   const { username, srn, prn, universityurl, university, course, startDate, graduateDate, cgp, state, district } = req.body;
   
+//   try {
+//     // Create a new UG document
+//     const newUG = new UG({
+//       username,
+//       srn,
+//       prn,
+//       universityurl,
+//       university,
+//       course,
+//       startDate: startDate ? new Date(startDate) : null,
+//       graduateDate: graduateDate ? new Date(graduateDate) : null,
+//       cgp,
+//       state,
+//       district,
+//       });
+
+//     // Save to the database
+//     await newUG.save();
+
+//     res.status(201).json({ success: true, message: "UG form data saved successfully!" });
+//   } catch (error) {
+//     console.error('Error saving UG form data:', error);
+//     res.status(500).json({ success: false, message: 'Server error' });
+//   }
+// });
+
+
+app.post('/api/ug', upload.single('transcriptFile'), async (req, res) => {
+  const { username, srn, prn, universityurl, university, course, startDate, graduateDate, cgp, state, district } = req.body;
+
   try {
+    let extractedText = null;
+
+    // If a transcript file is uploaded, process it with OCR
+    if (req.file) {
+      const filePath = path.join(__dirname, req.file.path);
+
+      try {
+        // Perform OCR using Tesseract.js
+        const { data: { text } } = await Tesseract.recognize(filePath, "eng");
+        extractedText = text;
+        console.log("OCR Extracted Text:", extractedText);
+
+        // Optional: Clean up the uploaded file after processing
+        fs.unlinkSync(filePath);
+      } catch (ocrError) {
+        console.error("OCR Error:", ocrError);
+        return res.status(500).json({ success: false, message: "Error processing transcript with OCR" });
+      }
+    }
+
     // Create a new UG document
     const newUG = new UG({
       username,
@@ -258,15 +325,23 @@ app.post('/api/ug', async (req, res) => {
       cgp,
       state,
       district,
-      });
+      transcriptFile: req.file ? req.file.filename : null, // Store the file name
+    });
+
+    // Optionally parse extractedText and populate schema fields
+    if (extractedText) {
+      newUG.university = extractedText.match(/University:\s*(.*)/)?.[1] || university;
+      newUG.course = extractedText.match(/Course:\s*(.*)/)?.[1] || course;
+      // Add more parsing logic as needed
+    }
 
     // Save to the database
     await newUG.save();
 
-    res.status(201).json({ success: true, message: "UG form data saved successfully!" });
+    res.status(201).json({ success: true, message: "UG form data saved successfully!", extractedText });
   } catch (error) {
-    console.error('Error saving UG form data:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
+    console.error("Error saving UG form data:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 });
 
